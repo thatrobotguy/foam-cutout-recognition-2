@@ -50,6 +50,9 @@ big_foam_img[off_h:off_h+foam_size, off_w:off_w+foam_size, :] = foam_resize
 # Now we need to insert the foam image into the empty image
 result_image = big_foam_img + empty_image
 # Show the image
-cv2.imshow('Original Image', result_image)
-cv2.waitKey(0)
-exit()
+# cv2.imshow('Original Image', result_image)
+# cv2.waitKey(0)
+# exit()
+
+# Save the image
+cv2.imwrite(resultname, result_image)
