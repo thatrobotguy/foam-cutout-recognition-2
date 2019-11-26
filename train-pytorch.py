@@ -21,7 +21,7 @@ print("Torchvision Version: ",torchvision.__version__)
 # Top level data directory.
 # This folder must include "train" and "val" directories,
 # each with a folder for each class.
-data_dir = "./data/"
+data_dir = "./preprocessing/data/out/"
 
 num_classes = 6
 batch_size = 24
@@ -55,29 +55,22 @@ def init_model():
 
     layers = []
                 # Conv2d is (input channels, output channels, kernel size)
-    layers.append(nn.Conv2d(3, 6, 3))
+    layers.append(nn.Conv2d(3, 20, 5))
     layers.append(nn.ReLU())
     layers.append(nn.MaxPool2d(2, 2)) # (kernel size, stride, padding,...)
 
-    layers.append(nn.Conv2d(6, 12, 3))
+    layers.append(nn.Conv2d(20, 10, 5))
     layers.append(nn.ReLU())
-    layers.append(nn.MaxPool2d(2, 2)) # (kernel size, stride, padding,...)
+    layers.append(nn.MaxPool2d(2, 2))
 
-    layers.append(nn.Conv2d(12, 24, 3))
-    layers.append(nn.ReLU())
-    layers.append(nn.MaxPool2d(2, 2)) # (kernel size, stride, padding,...)
 
-    layers.append(nn.Conv2d(24, 12, 3))
+    # Shape of activation after this last layer: (6, 249, 249)
+    layers.append(Flatten()) #
+    layers.append(nn.Linear(10*122*122, 1024))
     layers.append(nn.ReLU())
-    layers.append(nn.MaxPool2d(2, 2)) # (kernel size, stride, padding,...)
-
-    # Shape of activation after this last layer: (12, 29, 29)
-    layers.append(Flatten()) # 10,092
-    layers.append(nn.Linear(12*29*29, 1024))
+    layers.append(nn.Linear(1024, 64))
     layers.append(nn.ReLU())
-    layers.append(nn.Linear(1024, 256))
-    layers.append(nn.ReLU())
-    layers.append(nn.Linear(256, num_classes))
+    layers.append(nn.Linear(64, num_classes))
     #layers.append(nn.Softmax(dim=1))
 
     return nn.Sequential(*layers)
@@ -109,6 +102,9 @@ for epoch in range(num_epochs):
 
         # forward + backward + optimize
         outputs = model(inputs)
+        #print(outputs.shape)
+        #exit()
+
         _, predictions = torch.max(outputs, 1) # max function returns both values and indices
         running_corrects += torch.sum(predictions == labels.data)
 

@@ -15,12 +15,13 @@ import os
 import copy
 print("PyTorch Version: ",torch.__version__)
 print("Torchvision Version: ",torchvision.__version__)
+import random
 
-# Path to resize folder
-path = "./data/resize/"
-# Folder will contain a folder that contains multiple folders for classes.
-# resize/   /class1/ /class2/...
+# Path to data folder. Data folder shoulder have a "resize" folder
+# "Reize" folder should have 1 folder for each of the 6 classes.
+path = "./data/"
 
+percentage = 0.25
 batch_size = 1
 
 size = 500
@@ -31,18 +32,23 @@ transform = transforms.Compose([
     transforms.ToTensor()
 ])
 
-dataset = datasets.ImageFolder(path, transform)
+dataset = datasets.ImageFolder(os.path.join(path, "resize/"), transform)
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=4, shuffle=False)
 
 
 # img.permute(1, 2, 0)
 # Permute rearranges image dimensions (e.g. [3, w, h] -> [w, h, 3])
 
+os.mkdir(os.path.join(path, "out/"))
+os.mkdir(os.path.join(path, "out/train/"))
+os.mkdir(os.path.join(path, "out/val/"))
+
 i = 0
 for inputs, labels in dataloader:
     for img, label in zip(inputs, labels):
         filename = str(i)+".jpg"
-        directory = "out/"+str(label.numpy())+"/"
+        directory = "train" if random.random() > percentage else "val"
+        directory = "out/"+directory+"/"+str(label.numpy())+"/"
         dirpath = os.path.join(path, directory)
 
         _, h, w = img.shape
