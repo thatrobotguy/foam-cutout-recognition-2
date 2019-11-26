@@ -19,7 +19,7 @@ import random
 
 # Path to data folder. Data folder shoulder have a "resize" folder
 # "Reize" folder should have 1 folder for each of the 6 classes.
-path = "./data/"
+path = "./data_hard/"
 
 percentage = 0.25
 batch_size = 1
@@ -55,7 +55,7 @@ for inputs, labels in dataloader:
         m = max(h, w)
 
         img = transforms.ToPILImage()(img)
-        img_ = transforms.Pad((0, m-h, m-w, 0))(img)
+        img_ = transforms.Pad((0, m-h, m-w, 0), padding_mode="reflect")(img)
         img_ = transforms.Resize(size)(img_)
         img_ = transforms.ToTensor()(img_)
 

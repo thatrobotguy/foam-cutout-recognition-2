@@ -25,7 +25,9 @@ data_dir = "./preprocessing/data/out/"
 
 num_classes = 6
 batch_size = 24
-num_epochs = 10
+num_epochs = 25
+
+show_shape = False
 
 train_xform = transforms.Compose([
     transforms.RandomHorizontalFlip(),
@@ -55,22 +57,31 @@ def init_model():
 
     layers = []
                 # Conv2d is (input channels, output channels, kernel size)
-    layers.append(nn.Conv2d(3, 20, 5))
+    layers.append(nn.Conv2d(3, 32, 3))
     layers.append(nn.ReLU())
     layers.append(nn.MaxPool2d(2, 2)) # (kernel size, stride, padding,...)
 
-    layers.append(nn.Conv2d(20, 10, 5))
+    layers.append(nn.Conv2d(32, 32, 3))
     layers.append(nn.ReLU())
-    layers.append(nn.MaxPool2d(2, 2))
+    layers.append(nn.MaxPool2d(2, 2)) # (kernel size, stride, padding,...)
 
+    layers.append(nn.Conv2d(32, 64, 3))
+    layers.append(nn.ReLU())
+    layers.append(nn.MaxPool2d(2, 2)) # (kernel size, stride, padding,...)
 
-    # Shape of activation after this last layer: (6, 249, 249)
-    layers.append(Flatten()) #
-    layers.append(nn.Linear(10*122*122, 1024))
+    layers.append(nn.Conv2d(64, 32, 3))
     layers.append(nn.ReLU())
-    layers.append(nn.Linear(1024, 64))
+    layers.append(nn.MaxPool2d(2, 2)) # (kernel size, stride, padding,...)
+
+    # Shape of activation after this last layer:
+    layers.append(Flatten()) # I let pytorch compute 26912 for us
+    layers.append(nn.Linear(26912, 4096))
     layers.append(nn.ReLU())
-    layers.append(nn.Linear(64, num_classes))
+    layers.append(nn.Dropout(p=0.25))
+    layers.append(nn.Linear(4096, 512))
+    layers.append(nn.ReLU())
+    layers.append(nn.Dropout(p=0.25))
+    layers.append(nn.Linear(512, num_classes))
     #layers.append(nn.Softmax(dim=1))
 
     return nn.Sequential(*layers)
@@ -82,15 +93,23 @@ model = init_model()
 print(model)
 
 model = model.to(device)
-criterion = nn.CrossEntropyLoss()
+
+observations = [305, 188, 250, 112, 73, 71]
+class_weights = [sum(observations)/x for x in observations]
+class_weights = torch.FloatTensor(class_weights).cuda()
+
+criterion = nn.CrossEntropyLoss(class_weights)
 optimizer = optim.Adam(model.parameters())
 
 model.train()
+
+
 
 modulo = 10
 for epoch in range(num_epochs):
     running_loss = 0.0
     running_corrects = 0
+    confusion_matrix = np.zeros((num_classes, num_classes))
     for i, data in enumerate(train_dataloader, 0):
         # get the inputs; data is a list of [inputs, labels]
         inputs, labels = data
@@ -102,11 +121,16 @@ for epoch in range(num_epochs):
 
         # forward + backward + optimize
         outputs = model(inputs)
-        #print(outputs.shape)
-        #exit()
+        if show_shape:
+            print(outputs.shape)
+            exit()
 
         _, predictions = torch.max(outputs, 1) # max function returns both values and indices
         running_corrects += torch.sum(predictions == labels.data)
+
+        # Add to confusion matrix
+        for i, prediction in enumerate(predictions):
+            confusion_matrix[prediction,labels.data[i]] += 1
 
         loss = criterion(outputs, labels)
         loss.backward()
@@ -116,23 +140,34 @@ for epoch in range(num_epochs):
         running_loss += loss.item()
     epoch_loss = running_loss / len(train_dataloader.dataset)
     epoch_acc = running_corrects.double() / len(train_dataloader.dataset)
-    print(f"Epoch {epoch} loss: {epoch_loss:.4f}  |  (train set) accuracy: {epoch_acc:.4f}")
+    print(f"Epoch {epoch} loss: {epoch_loss:.6f}  |  (train set) accuracy: {epoch_acc:.4f}")
+    print(confusion_matrix)
 
 def validate():
+    confusion_matrix = np.zeros((num_classes, num_classes))
     running_corrects = 0
-    for i, data in enumerate(val_dataloader, 0):
-        inputs, labels = data
-        inputs = inputs.cuda()
-        labels = labels.cuda()
+    with torch.no_grad():
+        for i, data in enumerate(val_dataloader, 0):
+            inputs, labels = data
+            inputs = inputs.cuda()
+            labels = labels.cuda()
 
-        # zero the parameter gradients
-        optimizer.zero_grad()
+            # zero the parameter gradients
+            optimizer.zero_grad()
 
-        outputs = model(inputs)
-        _, predictions = torch.max(outputs, 1) # max function returns both values and indices
-        running_corrects += torch.sum(predictions == labels.data)
+            outputs = model(inputs)
+            _, predictions = torch.max(outputs, 1) # max function returns both values and indices
+            running_corrects += torch.sum(predictions == labels.data)
 
-    return running_corrects.double() / len(val_dataloader.dataset)
+            # Add to confusion matrix
+            for i, prediction in enumerate(predictions):
+                confusion_matrix[prediction,labels.data[i]] += 1
+
+    accuracy = running_corrects.double() / len(val_dataloader.dataset)
+    return confusion_matrix, accuracy
 
 model.eval()
-print(f"Validation accuracy: {validate():.4f}")
+confusion, accuracy = validate()
+print(f"Validation accuracy: {accuracy:.4f}")
+print("First dim: What we predicted. Second dim: what the class actually was")
+print(confusion)
