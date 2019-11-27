@@ -27,9 +27,6 @@ outputdir= sys.argv[2]
 image_h = int(sys.argv[3]) # width
 image_w = int(sys.argv[4]) # height
 
-# inputdir = script_dir +"/" + inputdir
-# outputdir= script_dir +"/" + outputdir
-
 sourcedir = os.path.abspath(os.path.join(script_dir , inputdir))
 outputdir = os.path.abspath(os.path.join(script_dir , outputdir))
 
@@ -55,37 +52,27 @@ def get_immediate_subdirectories(a_dir):
     return sorted([name for name in os.listdir(a_dir)
             if os.path.isdir(os.path.join(a_dir, name))])
 
-# Given some extensions in a list, get all files in the directors
-# https://stackoverflow.com/questions/48001890/how-to-read-images-from-a-directory-with-python-and-opencv
-def getFilenames(exts):
-    fnames = [glob.glob(ext) for ext in exts]
-    fnames = list(itertools.chain.from_iterable(fnames))
-    return fnames
-
 # Now that we know we have the direcotry to the source data, we need to traverse the source directory for all the classes inside of it.
 the_sub_dirs = get_immediate_subdirectories(sourcedir)
 print("Sub-directories of the root source folder.")
 print(the_sub_dirs)
-# We now need to join the input source path dir with the class directories to create the output directories
-for aclass in the_sub_dirs:
-    # These are creating the gray and color directories
-    part_gray_path  = os.path.abspath(os.path.join(outputdir , "gray"))
-    part_color_path = os.path.abspath(os.path.join(outputdir , "color"))
-    full_out_gray_path = os.path.abspath(os.path.join( part_gray_path , aclass))
-    full_out_color_path = os.path.abspath(os.path.join( part_color_path , aclass))
-    if not os.path.isdir(full_out_gray_path):
-        # Make the directory
-        print("Creating direcotry: " + str(full_out_gray_path))
-        os.makedirs(full_out_gray_path)
-    if not os.path.isdir(full_out_color_path):
-        # Make the directory
-        print("Creating direcotry: " + str(full_out_color_path))
-        os.makedirs(full_out_color_path)
-
-print("Now creating modded images.")
+# These are the different directories that we will create that each have their own set of class entries
 gray = "gray"
 color = "color"
-counter = 0
+edges = "edges"
+imtypes = [ gray , color , edges]
+# We now need to join the input source path dir with the class directories to create the output directories
+for aclass in the_sub_dirs:
+    for amodtype in imtypes:
+        # These are creating the gray and color directories
+        part_path = os.path.abspath(os.path.join(outputdir , amodtype))
+        full_out_path = os.path.abspath(os.path.join( part_path , aclass))
+        if not os.path.isdir(full_out_path):
+            # Make the directory
+            print("Creating direcotry: " + str(full_out_path))
+            os.makedirs(full_out_path)
+
+print("Now creating modded images.")
 # Now that the directories are made, we need to create the resized color and resized gray images.
 # iterate over the image classes
 for theclass in the_sub_dirs:
@@ -100,9 +87,6 @@ for theclass in the_sub_dirs:
     # Now we iterate through all of the files in this class directory
     for image in thefiles:
         if image.endswith(".JPG") or image.endswith(".jpg"):
-            # counter = counter + 1
-            # print("COUNTER: "+str(counter))
-            # read the image
             # print("Image")
             # print(image)
             # print(image_path)
@@ -112,26 +96,33 @@ for theclass in the_sub_dirs:
             input_img = cv2.imread(full_image_path)
             # print("Image shape")
             # print(input_img.shape)
-            #
-            # create the resized image
+            # 
             input_img_resize = cv2.resize(input_img, (image_h, image_w))
+            # create the resized image
             # convert the resized image to gray
             input_img_resize_gray = cv2.cvtColor(input_img_resize, cv2.COLOR_BGR2GRAY)
+            # do the canny edge detector on the image
+            edge_img = cv2.Canny(input_img_resize_gray,100,200)
             # Now we generate the filepaths that the modded images will be saved to
             out_part_gray_path  = os.path.abspath(os.path.join(outputdir , gray))
             out_part_color_path = os.path.abspath(os.path.join(outputdir , color))
+            out_part_edges_path = os.path.abspath(os.path.join(outputdir , edges))
+            #
             out_full_out_gray_path = os.path.abspath(os.path.join(  out_part_gray_path , theclass))
             out_full_out_color_path = os.path.abspath(os.path.join( out_part_color_path , theclass))
+            out_full_out_edges_path = os.path.abspath(os.path.join( out_part_edges_path , theclass))
             # Now we append the image name to the filepath
             out_full_out_gray_path = str(os.path.abspath(os.path.join(  out_full_out_gray_path  , image)))
             out_full_out_color_path = str(os.path.abspath(os.path.join( out_full_out_color_path , image)))
+            out_full_out_edges_path = str(os.path.abspath(os.path.join( out_full_out_edges_path , image)))
             # print("New Image paths")
             # print(out_full_out_gray_path)
             # print(out_full_out_color_path)
             status1 = cv2.imwrite(out_full_out_color_path , input_img_resize)
             status2 = cv2.imwrite(out_full_out_gray_path  , input_img_resize_gray)
+            status3 = cv2.imwrite(out_full_out_edges_path  , edge_img)
             # print("Files saved: "+str(status1)+" _ "+str(status2))
-            # cv2.imshow("blah", input_img_resize_gray)
-            # cv2.waitKey(0)
+            cv2.imshow("blah", edge_img)
+            cv2.waitKey(0)
 
 print("Program complete.")
