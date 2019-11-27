@@ -96,25 +96,18 @@ for theclass in the_sub_dirs:
             input_img = cv2.imread(full_image_path)
             # print("Image shape")
             # print(input_img.shape)
-            # 
             input_img_resize = cv2.resize(input_img, (image_h, image_w))
             # create the resized image
             # convert the resized image to gray
             input_img_resize_gray = cv2.cvtColor(input_img_resize, cv2.COLOR_BGR2GRAY)
             # do the canny edge detector on the image
-            edge_img = cv2.Canny(input_img_resize_gray,100,200)
+            #edge_img = cv2.Canny(input_img_resize_gray,100,200)
+            edge_img = cv2.Canny(input_img_resize_gray,181,210)
             # Now we generate the filepaths that the modded images will be saved to
-            out_part_gray_path  = os.path.abspath(os.path.join(outputdir , gray))
-            out_part_color_path = os.path.abspath(os.path.join(outputdir , color))
-            out_part_edges_path = os.path.abspath(os.path.join(outputdir , edges))
-            #
-            out_full_out_gray_path = os.path.abspath(os.path.join(  out_part_gray_path , theclass))
-            out_full_out_color_path = os.path.abspath(os.path.join( out_part_color_path , theclass))
-            out_full_out_edges_path = os.path.abspath(os.path.join( out_part_edges_path , theclass))
             # Now we append the image name to the filepath
-            out_full_out_gray_path = str(os.path.abspath(os.path.join(  out_full_out_gray_path  , image)))
-            out_full_out_color_path = str(os.path.abspath(os.path.join( out_full_out_color_path , image)))
-            out_full_out_edges_path = str(os.path.abspath(os.path.join( out_full_out_edges_path , image)))
+            out_full_out_gray_path = str(os.path.abspath(os.path.join(  os.path.abspath(os.path.join( os.path.abspath(os.path.join(outputdir , gray)) , theclass))  , image)))
+            out_full_out_color_path = str(os.path.abspath(os.path.join( os.path.abspath(os.path.join( os.path.abspath(os.path.join(outputdir , color)) , theclass)) , image)))
+            out_full_out_edges_path = str(os.path.abspath(os.path.join( os.path.abspath(os.path.join( os.path.abspath(os.path.join(outputdir , edges)) , theclass)) , image)))
             # print("New Image paths")
             # print(out_full_out_gray_path)
             # print(out_full_out_color_path)
@@ -122,7 +115,7 @@ for theclass in the_sub_dirs:
             status2 = cv2.imwrite(out_full_out_gray_path  , input_img_resize_gray)
             status3 = cv2.imwrite(out_full_out_edges_path  , edge_img)
             # print("Files saved: "+str(status1)+" _ "+str(status2))
-            cv2.imshow("blah", edge_img)
-            cv2.waitKey(0)
+            # cv2.imshow("blah", edge_img)
+            # cv2.waitKey(0)
 
 print("Program complete.")
