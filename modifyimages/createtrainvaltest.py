@@ -14,14 +14,16 @@ if not len(sys.argv) == 6:
 inputdir = sys.argv[1] # where did the images originaly from
 modedimagedir= sys.argv[2] # Where are the gray, color, and edge images
 outputdir= sys.argv[3] # Where are the test, val, and training directories supposed to be located?
-train_percent = int(sys.argv[3]) # percent of total data as training
-val_percent = int(sys.argv[4]) # percent of leftover images as validation
+train_percent = int(sys.argv[4]) # percent of total data as training
+val_percent = int(sys.argv[5]) # percent of leftover images as validation
 
 sourcedir = os.path.abspath(os.path.join(script_dir , inputdir))
+modedimagedir = os.path.abspath(os.path.join(script_dir , modedimagedir)) # gray, edge
 outputdir = os.path.abspath(os.path.join(script_dir , outputdir))
 
 print("Directories:")
 print(sourcedir)
+print(modedimagedir)
 print(outputdir)
 
 # does the root source image directory exist?
@@ -99,6 +101,57 @@ print("Testing  percent: "+str(test_ratio))
 # Now that we have the ratios, we can now actually start
 for imageclass in the_sub_dirs:
     # We now need to load an image from the source class dir and randomly choose if it goes in 
-
-
-# Now that we know the classes of the files, we will extract the images from the processed image classes and start assigning them to train val test
+    # I first look underneath the first layer of the moded images directory
+    moddedclasses = get_immediate_subdirectories(modedimagedir)
+    # print("Modded class stuff")
+    # print(moddedclasses)
+    for amoded in moddedclasses:
+        # Now we look at the classes underneath here - this could be gray, edge, or color being appended
+        class_in_moded = os.path.abspath(os.path.join(modedimagedir , amoded))
+        # print("Which class?")
+        # print(class_in_moded)
+        sub_classes = get_immediate_subdirectories(class_in_moded)
+        for oneclass in sub_classes:
+            if oneclass==imageclass:
+                # This means we will not have duplicates
+                # print("Which sub_class??")
+                # print(oneclass)
+                imagefolder_path = os.path.abspath(os.path.join(class_in_moded , oneclass))
+                # Now we iterate over the list of files in this file location
+                onlyfiles = [f for f in os.listdir(imagefolder_path) if os.path.isfile(os.path.join(imagefolder_path, f))]
+                # print("All FILES!!!!!")
+                # print(onlyfiles)
+                # Now we iterate over all images in the directory
+                for the_read_image in onlyfiles:
+                    # create the image path
+                    the_read_image_path = os.path.abspath(os.path.join(imagefolder_path , the_read_image ))
+                    # print("Image full path")
+                    # print(the_read_image_path)
+                    # Now that we have gotten here, we have an image class type. This tells us where to put the image in test/val/train
+                    # we now need to call a random number to decide if this object is a train, val, or test
+                    result = random.random()
+                    destpath=None
+                    # Now we check which one we got
+                    if 0 <= result < train_ratio:
+                        # This means that we have an image that will go into the training directory
+                        # We create the destination directory filepath
+                        destpath = os.path.abspath(os.path.join(trainpath , oneclass ))
+                        # now save the file to here.
+                        #theimage = cv2.imread()
+                    elif train_ratio <= result < train_ratio+val_ratio:
+                        # This means we have to do image validation
+                        destpath = os.path.abspath(os.path.join(valpath , oneclass ))
+                    #if train_ratio+val_ratio <= result:
+                    else:
+                        # This means we are putting the file into the test directory
+                        destpath = os.path.abspath(os.path.join(testpath , oneclass ))
+                    # We have to append the filename from before to the filepath we are saving to
+                    destpath = os.path.abspath(os.path.join(destpath , the_read_image ))
+                    # print("Destination path:")
+                    # print(destpath)
+                    # Now that we have the source and destination, we can read in the file and save the file
+                    input_image = cv2.imread(the_read_image_path)
+                    status = cv2.imwrite(destpath, input_image)
+                    # print("Save status"+str(status))
+                    # exit()
+print("Copying done.")
