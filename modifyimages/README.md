@@ -7,6 +7,6 @@ You pass in 4 arguments.
 4. The height of the resized image
 Here is an example of running the script:
 ```
-python3 resizeimages.py root_source/ output 700 200
+python3 resizegrayedge.py root_source/ output 700 200
 ```
 The script will then generate the data.
