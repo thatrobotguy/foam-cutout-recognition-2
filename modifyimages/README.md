@@ -15,13 +15,14 @@ The script will then generate the data.
 The script `createtrainvaltest.py` takes in the directory containing the class definitions. This is the same as the previous script. This is how the script knows what datatypes there are.
 Given the information on the image classes, this script will generate 3 directories. There will be a `train` directory, a `val` directory, and a `test` directory. Under the `train` and `val` directories, there will be a directory for each classification. If there are 6 classes in the root source image directory, there will be 6 folders underneath `train` and `val`. The `test` directory will have the same structure as `train` and `val`, but I am expecting this to change.
 
-You pass 4 arguments to the script.
+You pass 5 arguments to the script.
 1. The local root source directory or all of the manually classified images
-2. the local output directory that will contain `train`, `val`, and `test`
-3. The percentage of all source images that we want to have in the `train` directory. This will be an integer from 0 to 100
-4. The percentage of the images not used in `train` to be placed in the `val` directory This will be an integer from 0 to 100
+2. The directory where the original data was converted into gray, color, and edges
+3. the local output directory that will contain `train`, `val`, and `test`
+4. The percentage of all source images that we want to have in the `train` directory. This will be an integer from 0 to 100
+5. The percentage of the images not used in `train` to be placed in the `val` directory This will be an integer from 0 to 100
 Here is an exmaple of running the script:
 ```
-python3 createtrainvaltest.py root_source/ trainvaltestdir 80 50
+python3 createtrainvaltest.py root_source/ trainvaltestdir 80 60
 ```
 The script will then generate the data.
