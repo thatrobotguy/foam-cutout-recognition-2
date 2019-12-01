@@ -21,10 +21,11 @@ print("Torchvision Version: ",torchvision.__version__)
 # Top level data directory.
 # This folder must include "train" and "val" directories,
 # each with a folder for each class.
-data_dir = "./preprocessing/data/out/"
+data_dir = "./data/"
+val_dirname = "val"
 
-num_classes = 5
-batch_size = 12
+num_classes = 6
+batch_size = 36
 num_epochs = 5
 
 showdata = False # For testing data augmentation
@@ -36,12 +37,13 @@ train_xform = transforms.Compose([
     transforms.ToTensor()
 ])
 val_xform = transforms.Compose([
+    transforms.Resize(360),
     transforms.ToTensor()
 ])
 
 
 train_dataset = datasets.ImageFolder(os.path.join(data_dir, "train"), train_xform)
-val_dataset   = datasets.ImageFolder(os.path.join(data_dir, "val"),   val_xform)
+val_dataset   = datasets.ImageFolder(os.path.join(data_dir, val_dirname),   val_xform)
 
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, num_workers=4, shuffle=True)
 val_dataloader   = torch.utils.data.DataLoader(val_dataset,   batch_size=batch_size, num_workers=4, shuffle=True)
@@ -58,37 +60,26 @@ def init_model():
 
     layers = []
                 # Conv2d is (input channels, output channels, kernel size)
-    layers.append(nn.Conv2d(3, 64, 7))
+    layers.append(nn.Conv2d(3, 32, 3))
     layers.append(nn.ReLU())
-    layers.append(nn.MaxPool2d(2, 2)) # (kernel size, stride, padding,...)
+    layers.append(nn.MaxPool2d(2, 2))
 
-    layers.append(nn.Conv2d(64, 128, 3))
+    layers.append(nn.Conv2d(32, 64, 3))
     layers.append(nn.ReLU())
-    layers.append(nn.Conv2d(128, 128, 3))
-    layers.append(nn.ReLU())
-    layers.append(nn.MaxPool2d(2, 2)) # (kernel size, stride, padding,...)
+    layers.append(nn.MaxPool2d(2, 2))
 
-    layers.append(nn.Conv2d(128, 128, 3))
+    layers.append(nn.Conv2d(64, 64, 3))
     layers.append(nn.ReLU())
-    layers.append(nn.Conv2d(128, 128, 3))
-    layers.append(nn.ReLU())
-    layers.append(nn.MaxPool2d(2, 2)) # (kernel size, stride, padding,...)
+    layers.append(nn.MaxPool2d(2, 2))
 
-    layers.append(nn.Conv2d(128, 128, 3))
+    layers.append(nn.Conv2d(64, 32, 3))
     layers.append(nn.ReLU())
-    layers.append(nn.Conv2d(128, 128, 3))
-    layers.append(nn.ReLU())
-    layers.append(nn.MaxPool2d(2, 2)) # (kernel size, stride, padding,...)
+    layers.append(nn.MaxPool2d(2, 2))
 
-    layers.append(nn.Conv2d(128, 128, 3))
-    layers.append(nn.ReLU())
-    layers.append(nn.Conv2d(128, 128, 3))
-    layers.append(nn.ReLU())
-    layers.append(nn.MaxPool2d(2, 2)) # (kernel size, stride, padding,...)
 
     # Shape of activation after this last layer:
     layers.append(Flatten()) # I let pytorch compute 26912 for us
-    layers.append(nn.Linear(15488, 4096))
+    layers.append(nn.Linear(12800, 4096))
     layers.append(nn.ReLU())
     layers.append(nn.Dropout(p=0.25))
     layers.append(nn.Linear(4096, 512))
@@ -107,8 +98,7 @@ print(model)
 
 model = model.to(device)
 
-observations = [188, 250, 112, 73, 71]
-#observations = [305, 188, 250, 112, 73, 71] # This line could be automated from the dataset dir
+observations = [426, 702, 610, 728, 551, 696]
 class_weights = [sum(observations)/x for x in observations]
 class_weights = torch.FloatTensor(class_weights).cuda()
 

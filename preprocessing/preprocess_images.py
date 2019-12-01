@@ -21,7 +21,7 @@ import random
 # "Reize" folder should have 1 folder for each of the 6 classes.
 path = "./data/"
 
-percentage = 0.25
+percentage = 0
 batch_size = 1
 
 size = 500
