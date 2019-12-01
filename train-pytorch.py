@@ -23,14 +23,15 @@ print("Torchvision Version: ",torchvision.__version__)
 # each with a folder for each class.
 data_dir = "./preprocessing/data/out/"
 
-num_classes = 6
-batch_size = 24
-num_epochs = 25
+num_classes = 5
+batch_size = 12
+num_epochs = 5
 
-show_shape = False
+showdata = False # For testing data augmentation
 
 train_xform = transforms.Compose([
     transforms.RandomHorizontalFlip(),
+    #transforms.RandomAffine(degrees=0, translate=(0.05, 0.05), scale=(1, 1.08)),
     transforms.RandomRotation(20),
     transforms.ToTensor()
 ])
@@ -57,25 +58,37 @@ def init_model():
 
     layers = []
                 # Conv2d is (input channels, output channels, kernel size)
-    layers.append(nn.Conv2d(3, 32, 3))
+    layers.append(nn.Conv2d(3, 64, 7))
     layers.append(nn.ReLU())
     layers.append(nn.MaxPool2d(2, 2)) # (kernel size, stride, padding,...)
 
-    layers.append(nn.Conv2d(32, 32, 3))
+    layers.append(nn.Conv2d(64, 128, 3))
+    layers.append(nn.ReLU())
+    layers.append(nn.Conv2d(128, 128, 3))
     layers.append(nn.ReLU())
     layers.append(nn.MaxPool2d(2, 2)) # (kernel size, stride, padding,...)
 
-    layers.append(nn.Conv2d(32, 64, 3))
+    layers.append(nn.Conv2d(128, 128, 3))
+    layers.append(nn.ReLU())
+    layers.append(nn.Conv2d(128, 128, 3))
     layers.append(nn.ReLU())
     layers.append(nn.MaxPool2d(2, 2)) # (kernel size, stride, padding,...)
 
-    layers.append(nn.Conv2d(64, 32, 3))
+    layers.append(nn.Conv2d(128, 128, 3))
+    layers.append(nn.ReLU())
+    layers.append(nn.Conv2d(128, 128, 3))
+    layers.append(nn.ReLU())
+    layers.append(nn.MaxPool2d(2, 2)) # (kernel size, stride, padding,...)
+
+    layers.append(nn.Conv2d(128, 128, 3))
+    layers.append(nn.ReLU())
+    layers.append(nn.Conv2d(128, 128, 3))
     layers.append(nn.ReLU())
     layers.append(nn.MaxPool2d(2, 2)) # (kernel size, stride, padding,...)
 
     # Shape of activation after this last layer:
     layers.append(Flatten()) # I let pytorch compute 26912 for us
-    layers.append(nn.Linear(26912, 4096))
+    layers.append(nn.Linear(15488, 4096))
     layers.append(nn.ReLU())
     layers.append(nn.Dropout(p=0.25))
     layers.append(nn.Linear(4096, 512))
@@ -94,7 +107,8 @@ print(model)
 
 model = model.to(device)
 
-observations = [305, 188, 250, 112, 73, 71]
+observations = [188, 250, 112, 73, 71]
+#observations = [305, 188, 250, 112, 73, 71] # This line could be automated from the dataset dir
 class_weights = [sum(observations)/x for x in observations]
 class_weights = torch.FloatTensor(class_weights).cuda()
 
@@ -113,6 +127,10 @@ for epoch in range(num_epochs):
     for i, data in enumerate(train_dataloader, 0):
         # get the inputs; data is a list of [inputs, labels]
         inputs, labels = data
+        if showdata:
+            plt.imshow(inputs[0].permute(1, 2, 0))
+            plt.show()
+
         inputs = inputs.cuda()
         labels = labels.cuda()
 
@@ -121,9 +139,6 @@ for epoch in range(num_epochs):
 
         # forward + backward + optimize
         outputs = model(inputs)
-        if show_shape:
-            print(outputs.shape)
-            exit()
 
         _, predictions = torch.max(outputs, 1) # max function returns both values and indices
         running_corrects += torch.sum(predictions == labels.data)

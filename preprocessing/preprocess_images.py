@@ -19,7 +19,7 @@ import random
 
 # Path to data folder. Data folder shoulder have a "resize" folder
 # "Reize" folder should have 1 folder for each of the 6 classes.
-path = "./data_hard/"
+path = "./data/"
 
 percentage = 0.25
 batch_size = 1
